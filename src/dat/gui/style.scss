@@ -119,6 +119,14 @@ $input-color: lighten($background-color, 8.5%);
       background: #000 url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;
       cursor: pointer;
       border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:active {
+        background: lighten(#000, 15%) url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;
+      }
+
+      .folder .folder & {
+        border-left: 3px solid rgba(255, 255, 255, 0.4);
+      }
     }
 
   }

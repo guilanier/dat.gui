@@ -11,13 +11,17 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import NumberController from './NumberController';
-import dom from '../dom/dom';
-import common from '../utils/common';
+import NumberController from "./NumberController";
+import dom from "../dom/dom";
+import common from "../utils/common";
 
 function roundToDecimal(value, decimals) {
   const tenTo = Math.pow(10, decimals);
   return Math.round(value * tenTo) / tenTo;
+}
+
+function hasTouch() {
+  return "ontouchstart" in window;
 }
 
 /**
@@ -65,6 +69,8 @@ class NumberControllerBox extends NumberController {
       onFinish();
     }
 
+    // -- mouse 
+
     function onMouseDrag(e) {
       const diff = prevY - e.clientY;
       _this.setValue(_this.getValue() + diff * _this.__impliedStep);
@@ -73,26 +79,54 @@ class NumberControllerBox extends NumberController {
     }
 
     function onMouseUp() {
-      dom.unbind(window, 'mousemove', onMouseDrag);
-      dom.unbind(window, 'mouseup', onMouseUp);
+      dom.unbind(window, "mousemove", onMouseDrag);
+      dom.unbind(window, "mouseup", onMouseUp);
       onFinish();
     }
 
     function onMouseDown(e) {
-      dom.bind(window, 'mousemove', onMouseDrag);
-      dom.bind(window, 'mouseup', onMouseUp);
+      dom.bind(window, "mousemove", onMouseDrag);
+      dom.bind(window, "mouseup", onMouseUp);
       prevY = e.clientY;
     }
 
-    this.__input = document.createElement('input');
-    this.__input.setAttribute('type', 'text');
+    // -- touch 
+
+    function onTouchDrag(e) {
+      const multiTouch = e.touches.length > 1;
+      if (multiTouch) e.preventDefault();
+
+      const diff = prevY - e.touches[0].clientY;
+      _this.setValue(_this.getValue() + diff * _this.__impliedStep);
+
+      prevY = e.touches[0].clientY;
+    }
+
+    function onTouchDown(e) {
+      dom.bind(window, "touchmove", onTouchDrag);
+      dom.bind(window, "touchend", onTouchUp);
+      prevY = e.touches[0].clientY;
+    }
+
+    function onTouchUp(e) {
+      dom.unbind(window, "touchmove", onTouchDrag);
+      dom.unbind(window, "touchend", onTouchUp);
+      onFinish();
+    }
+
+    this.__input = document.createElement("input");
+    this.__input.setAttribute("type", "text");
 
     // Makes it so manually specified values are not truncated.
 
-    dom.bind(this.__input, 'change', onChange);
-    dom.bind(this.__input, 'blur', onBlur);
-    dom.bind(this.__input, 'mousedown', onMouseDown);
-    dom.bind(this.__input, 'keydown', function(e) {
+    dom.bind(this.__input, "change", onChange);
+    dom.bind(this.__input, "blur", onBlur);
+    if(hasTouch()){
+      dom.bind(this.__input, "touchstart", onTouchDown);
+    } else {
+      dom.bind(this.__input, "mousedown", onMouseDown);
+    }
+    dom.bind(this.__input, "keydown", function(e) {
       // When pressing enter, you can be as precise as you want.
       if (e.keyCode === 13) {
         _this.__truncationSuspended = true;
@@ -108,7 +142,9 @@ class NumberControllerBox extends NumberController {
   }
 
   updateDisplay() {
-    this.__input.value = this.__truncationSuspended ? this.getValue() : roundToDecimal(this.getValue(), this.__precision);
+    this.__input.value = this.__truncationSuspended
+      ? this.getValue()
+      : roundToDecimal(this.getValue(), this.__precision);
     return super.updateDisplay();
   }
 }
